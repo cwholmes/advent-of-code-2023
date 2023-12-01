@@ -20,9 +20,7 @@ defmodule Trebuchet do
             end
           remaining_string = String.slice(string, 2..-1)
           quote do
-            def get_ints(unquote(digit_unicode)) do
-              [unquote(digit)]
-            end
+            def get_ints(unquote(digit_unicode)), do: [unquote(digit)]
             def words_to_ints(unquote(string) <> rest) do
               [unquote(digit_unicode) | words_to_ints(unquote(remaining_string) <> rest)]
             end
@@ -58,7 +56,6 @@ defmodule Trebuchet do
       |> Enum.reduce(fn x, y -> x + y end)
     end
   end
-
   defmodule Part2 do
     use Base
 
