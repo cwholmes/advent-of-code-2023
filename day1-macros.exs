@@ -1,60 +1,39 @@
 defmodule Trebuchet do
   defmodule Base do
-    def to_unicode(x) do
-      case "#{x}" do
-        <<val::utf8>> -> val
-      end
-    end
     defmacro __using__(__opts) do
-      get_ints =
-        Enum.map(0..9, fn digit ->
-          digit_unicode =
-            case "#{digit}" do
-              <<val::utf8>> -> val
-            end
-          quote do
-            def get_ints(unquote(digit_unicode)) do
-              [unquote(digit)]
-            end
-          end
-        end)
-      additional_get_ints =
-        quote do
-          def get_ints(:break), do: [:break]
-          def get_ints(_other), do: []
-        end
-      words_and_ints =
-        [
-          {"one", 1},
-          {"two", 2},
-          {"three", 3},
-          {"four", 4},
-          {"five", 5},
-          {"six", 6},
-          {"seven", 7},
-          {"eight", 8},
-          {"nine", 9},
-        ]
-      words_to_ints =
-        Enum.map(words_and_ints,fn {string, digit} ->
+      int_to_word = %{
+        1 => "one",
+        2 => "two",
+        3 => "three",
+        4 => "four",
+        5 => "five",
+        6 => "six",
+        7 => "seven",
+        8 => "eight",
+        9 => "nine",
+      }
+      num_methods =
+        Enum.map(int_to_word, fn {digit, string} ->
           digit_unicode =
             case "#{digit}" do
               <<val::utf8>> -> val
             end
           remaining_string = String.slice(string, 2..-1)
           quote do
+            def get_ints(unquote(digit_unicode)) do
+              [unquote(digit)]
+            end
             def words_to_ints(unquote(string) <> rest) do
               [unquote(digit_unicode) | words_to_ints(unquote(remaining_string) <> rest)]
             end
           end
         end)
-      additional_words_to_ints =
+      extra_methods =
         quote do
+          def get_ints(:break), do: [:break]
+          def get_ints(_other), do: []
           def words_to_ints(<<first::utf8, rest::binary>>), do: [first | words_to_ints(rest)]
           def words_to_ints(""), do: []
-        end
-      process_acc =
-        quote do
           def process_acc(:break, {}), do: {[], {:break}}
           def process_acc(:break, {:break}), do: {[], {:break}}
           def process_acc(:break, {single}), do: {[Integer.undigits([single, single])], {:break}}
@@ -63,7 +42,7 @@ defmodule Trebuchet do
           def process_acc(next, {value1}), do: {[], {value1, next}}
           def process_acc(next, {value1, _value2}), do: {[], {value1, next}}
         end
-      get_ints ++ [additional_get_ints] ++ words_to_ints ++ [additional_words_to_ints] ++ [process_acc]
+      num_methods ++ [extra_methods]
     end
   end
   defmodule Part1 do
